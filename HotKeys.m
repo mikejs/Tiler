@@ -8,12 +8,15 @@ static OSStatus HotKeyHandler(EventHandlerCallRef nextHandler, EventRef theEvent
 	EventHotKeyID hotKeyID;
 	GetEventParameter(theEvent,kEventParamDirectObject,typeEventHotKeyID,
 					  NULL,sizeof(hotKeyID),NULL,&hotKeyID);
-	
-	if (hotKeyID.signature == 'mjs1' && hotKeyID.id == 1) {
+
+	if (hotKeyID.signature == 'mjs1' && hotKeyID.id == 0) {
 		TilerAppDelegate *appDelegate = (TilerAppDelegate *)userData;
 		[appDelegate addFrontMostWindow];
+	} else if (hotKeyID.signature == 'mjs1' && hotKeyID.id == 1) {
+		TilerAppDelegate *appDelegate = (TilerAppDelegate *)userData;
+		[appDelegate left];
 	}
-	
+
 	return TRUE;
 }
 
@@ -28,6 +31,11 @@ void InitHotKeys(void* appDelegate) {
 	EventHotKeyRef hotKeyRef;
 
 	hotKeyID.signature = 'mjs1';
+	hotKeyID.id = 0;
+
+	error = RegisterEventHotKey(49, cmdKey+optionKey+controlKey, hotKeyID,
+								GetEventDispatcherTarget(), 0, &hotKeyRef);
+
 	hotKeyID.id = 1;
 
 	error = RegisterEventHotKey(123, cmdKey+optionKey+controlKey, hotKeyID,

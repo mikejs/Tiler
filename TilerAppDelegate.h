@@ -8,6 +8,7 @@
 - (void)addFrontMostWindow;
 - (void)addWindow:(AXUIElementRef)window;
 - (void)reflow;
+- (void)left;
 
 @property (assign) IBOutlet NSWindow *window;
 
