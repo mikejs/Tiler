@@ -10,6 +10,10 @@ enum {
 	MJS1_UP,
 	MJS1_DOWN,
 	MJS1_ADD_COLUMN,
+	MJS1_FOCUS_RIGHT,
+	MJS1_FOCUS_LEFT,
+	MJS1_FOCUS_UP,
+	MJS1_FOCUS_DOWN,
 };
 
 static OSStatus HotKeyHandler(EventHandlerCallRef nextHandler, EventRef theEvent, void *userData)
@@ -30,6 +34,14 @@ static OSStatus HotKeyHandler(EventHandlerCallRef nextHandler, EventRef theEvent
 			case MJS1_UP: [appDelegate move:@"up"];
 				break;
 			case MJS1_DOWN: [appDelegate move:@"down"];
+				break;
+			case MJS1_FOCUS_RIGHT: [appDelegate focus:@"left"];
+				break;
+			case MJS1_FOCUS_LEFT: [appDelegate focus:@"right"];
+				break;
+			case MJS1_FOCUS_UP: [appDelegate focus:@"up"];
+				break;
+			case MJS1_FOCUS_DOWN: [appDelegate focus:@"down"];
 				break;
 		}
 	}
@@ -70,6 +82,26 @@ void InitHotKeys(void* appDelegate) {
 	hotKeyID.id = MJS1_DOWN;
 	
 	error = RegisterEventHotKey(0x7D, cmdKey+optionKey+controlKey, hotKeyID,
+								GetEventDispatcherTarget(), 0, &hotKeyRef);
+	
+	hotKeyID.id = MJS1_FOCUS_LEFT;
+	
+	error = RegisterEventHotKey(0x7B, cmdKey+optionKey, hotKeyID,
+								GetEventDispatcherTarget(), 0, &hotKeyRef);
+	
+	hotKeyID.id = MJS1_FOCUS_RIGHT;
+	
+	error = RegisterEventHotKey(0x7C, cmdKey+optionKey, hotKeyID,
+								GetEventDispatcherTarget(), 0, &hotKeyRef);
+	
+	hotKeyID.id = MJS1_FOCUS_UP;
+	
+	error = RegisterEventHotKey(0x7E, cmdKey+optionKey, hotKeyID,
+								GetEventDispatcherTarget(), 0, &hotKeyRef);
+	
+	hotKeyID.id = MJS1_FOCUS_DOWN;
+	
+	error = RegisterEventHotKey(0x7D, cmdKey+optionKey, hotKeyID,
 								GetEventDispatcherTarget(), 0, &hotKeyRef);
 	if(error) {
 		NSLog(@"ERROR!!!");

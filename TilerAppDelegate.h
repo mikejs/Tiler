@@ -2,14 +2,15 @@
 
 @interface TilerAppDelegate : NSObject <NSApplicationDelegate> {
     NSWindow *window;
-//	NSMutableArray *windows;
-	NSMutableArray *columns;
+
+	NSMutableArray *columns, *widths;
 }
 
 - (void)addFrontMostWindow;
 - (void)addWindow:(AXUIElementRef)window;
 - (void)reflow;
 - (void)move:(NSString *)where;
+- (void)focus:(NSString *)where;
 
 @property (assign) IBOutlet NSWindow *window;
 

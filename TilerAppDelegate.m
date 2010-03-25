@@ -170,4 +170,66 @@ static AXUIElementRef getFrontMostWindow()
 	}
 }
 
+- (void)focus:(NSString *)where {
+	AXUIElementRef window = getFrontMostWindow();
+	
+	NSUInteger col_count = [columns count];
+	for (int col = 0; col < col_count; col++) {
+		NSArray *column = [columns objectAtIndex:col];
+		NSUInteger win_count = [column count];
+		
+		NSUInteger win = [column indexOfObject:window];
+
+		if (win != NSNotFound) {
+			int to_col, to_win;
+
+			if ([where isEqualToString:@"left"]) {
+				if (col <= 0) {
+					to_col = col_count - 1;
+				} else {
+					to_col = col - 1;
+				}
+				to_win = 0;
+			} else if ([where isEqualToString:@"right"]) {
+				if (col >= col_count - 1) {
+					to_col = 0;
+				} else {
+					to_col = col + 1;
+				}
+				to_win = 0;
+			} else if ([where isEqualToString:@"up"]) {
+				if (win <= 0) {
+					to_win = win_count - 1;
+				} else {
+					to_win = win - 1;
+				}
+				to_col = col;
+			} else if ([where isEqualToString:@"down"]) {
+				if (win >= win_count - 1) {
+					to_win = 0;
+				} else {
+					to_win = win + 1;
+				}
+				to_col = col;
+			} else {
+				NSLog(@"Bad where %@", where);
+				exit(1);
+			}
+
+			NSLog(@"%d, %d", to_col, to_win);
+			
+			AXUIElementRef to_window = (AXUIElementRef)[[columns objectAtIndex:to_col] objectAtIndex:to_win];
+			pid_t pid;
+			AXUIElementGetPid(to_window, &pid);
+			ProcessSerialNumber psn;
+			GetProcessForPID(pid, &psn);
+			SetFrontProcessWithOptions(&psn, kSetFrontProcessFrontWindowOnly);
+			
+			AXUIElementPerformAction(to_window, @"AXRaise");
+			
+			return;
+		}
+	}
+}
+
 @end
