@@ -3,20 +3,36 @@
 #import <unistd.h>
 #import <Carbon/Carbon.h>
 
+enum {
+	MJS1_ADD,
+	MJS1_LEFT,
+	MJS1_RIGHT,
+	MJS1_UP,
+	MJS1_DOWN,
+	MJS1_ADD_COLUMN,
+};
+
 static OSStatus HotKeyHandler(EventHandlerCallRef nextHandler, EventRef theEvent, void *userData)
 {
 	EventHotKeyID hotKeyID;
 	GetEventParameter(theEvent,kEventParamDirectObject,typeEventHotKeyID,
 					  NULL,sizeof(hotKeyID),NULL,&hotKeyID);
 
-	if (hotKeyID.signature == 'mjs1' && hotKeyID.id == 0) {
+	if (hotKeyID.signature == 'mjs1') {
 		TilerAppDelegate *appDelegate = (TilerAppDelegate *)userData;
-		[appDelegate addFrontMostWindow];
-	} else if (hotKeyID.signature == 'mjs1' && hotKeyID.id == 1) {
-		TilerAppDelegate *appDelegate = (TilerAppDelegate *)userData;
-		[appDelegate left];
+		switch (hotKeyID.id) {
+			case MJS1_ADD: [appDelegate addFrontMostWindow];
+				break;
+			case MJS1_LEFT: [appDelegate move:@"left"];
+				break;
+			case MJS1_RIGHT: [appDelegate move:@"right"];
+				break;
+			case MJS1_UP: [appDelegate move:@"up"];
+				break;
+			case MJS1_DOWN: [appDelegate move:@"down"];
+				break;
+		}
 	}
-
 	return TRUE;
 }
 
@@ -31,16 +47,30 @@ void InitHotKeys(void* appDelegate) {
 	EventHotKeyRef hotKeyRef;
 
 	hotKeyID.signature = 'mjs1';
-	hotKeyID.id = 0;
+	hotKeyID.id = MJS1_ADD;
 
-	error = RegisterEventHotKey(49, cmdKey+optionKey+controlKey, hotKeyID,
+	error = RegisterEventHotKey(0x31, cmdKey+optionKey+controlKey, hotKeyID,
 								GetEventDispatcherTarget(), 0, &hotKeyRef);
 
-	hotKeyID.id = 1;
+	hotKeyID.id = MJS1_LEFT;
 
-	error = RegisterEventHotKey(123, cmdKey+optionKey+controlKey, hotKeyID,
+	error = RegisterEventHotKey(0x7B, cmdKey+optionKey+controlKey, hotKeyID,
+								GetEventDispatcherTarget(), 0, &hotKeyRef);
+	
+	hotKeyID.id = MJS1_RIGHT;
+	
+	error = RegisterEventHotKey(0x7C, cmdKey+optionKey+controlKey, hotKeyID,
 								GetEventDispatcherTarget(), 0, &hotKeyRef);
 
+	hotKeyID.id = MJS1_UP;
+	
+	error = RegisterEventHotKey(0x7E, cmdKey+optionKey+controlKey, hotKeyID,
+								GetEventDispatcherTarget(), 0, &hotKeyRef);
+	
+	hotKeyID.id = MJS1_DOWN;
+	
+	error = RegisterEventHotKey(0x7D, cmdKey+optionKey+controlKey, hotKeyID,
+								GetEventDispatcherTarget(), 0, &hotKeyRef);
 	if(error) {
 		NSLog(@"ERROR!!!");
 	}
