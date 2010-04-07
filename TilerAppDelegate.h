@@ -1,17 +1,14 @@
 #import <Cocoa/Cocoa.h>
+#import "HotKeys.h"
 
 @interface TilerAppDelegate : NSObject <NSApplicationDelegate> {
-    NSWindow *window;
-
-	NSMutableArray *columns, *widths;
+	NSMutableArray *columns;
 }
 
 - (void)addFrontMostWindow;
 - (void)addWindow:(AXUIElementRef)window;
 - (void)reflow;
-- (void)move:(NSString *)where;
-- (void)focus:(NSString *)where;
-
-@property (assign) IBOutlet NSWindow *window;
+- (void)move:(direction)where;
+- (void)focus:(direction)where;
 
 @end

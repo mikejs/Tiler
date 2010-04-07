@@ -1,49 +1,12 @@
 #import "TilerAppDelegate.h"
-#import "HotKeys.h"
+#import "utils.h"
 #import <unistd.h>
 #import <Carbon/Carbon.h>
 
-static AXUIElementRef getFrontMostWindow();
-
-static bool amIAuthorized()
-{
-    if (AXAPIEnabled() != 0) {
-        return true;
-    }
-
-    if (AXIsProcessTrusted() != 0) {
-        return true;
-    }
-
-    return false;
-}
-
-static AXUIElementRef getFrontMostApp()
-{
-    pid_t pid;
-    ProcessSerialNumber psn;
-
-    GetFrontProcess(&psn);
-    GetProcessPID(&psn, &pid);
-    return AXUIElementCreateApplication(pid);
-}
-
-static AXUIElementRef getFrontMostWindow()
-{
-	AXUIElementRef frontMostWindow;
-
-    AXUIElementCopyAttributeValue(getFrontMostApp(), kAXFocusedWindowAttribute,
-                                  (CFTypeRef *)&frontMostWindow);
-
-	return frontMostWindow;
-}
-
 @implementation TilerAppDelegate
 
-@synthesize window;
-
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
-	InitHotKeys();
+	initHotKeys();
 	columns = [NSMutableArray new];
 	[columns insertObject:[NSMutableArray new] atIndex:0];
 	[columns insertObject:[NSMutableArray new] atIndex:0];
@@ -56,8 +19,8 @@ static AXUIElementRef getFrontMostWindow()
 
 - (void)addWindow:(AXUIElementRef)window {
 	NSMutableArray *col = [columns lastObject];
-	if (![col containsObject:window]) {
-		[col insertObject:window atIndex:0];
+	if (![col containsObject:(id)window]) {
+		[col insertObject:(id)window atIndex:0];
 	}
 }
 
@@ -68,7 +31,6 @@ static AXUIElementRef getFrontMostWindow()
 	CGPoint windowPosition;
 	AXUIElementRef menuBar;
 	NSRect frame;
-	int i = 0;
 
 	frame = [[NSScreen mainScreen] frame];
 
@@ -113,7 +75,7 @@ static AXUIElementRef getFrontMostWindow()
 	}
 }
 
-- (void)move:(NSString *)where {
+- (void)move:(direction)where {
 	AXUIElementRef window;
 	NSUInteger pos;
 	
@@ -122,46 +84,51 @@ static AXUIElementRef getFrontMostWindow()
 	for (int col = 0; col < [columns count]; col++) {
 		NSMutableArray *column = [columns objectAtIndex:col];
 		
-		NSUInteger index = [column indexOfObject:window];
+		NSUInteger index = [column indexOfObject:(id)window];
 		
 		if (index != NSNotFound) {
 			NSMutableArray *to_col;
-
-			if ([where isEqualToString:@"left"]) {
-				if (col <= 0) {
-					to_col = [columns lastObject];
-				} else {
-					to_col = [columns objectAtIndex:col-1];
-				}
-				pos = 0;
-			} else if([where isEqualToString:@"right"]) {
-				if (col >= [columns count]) {
-					to_col = [columns objectAtIndex:0];
-				} else {
-					to_col = [columns objectAtIndex:col+1];
-				}
-				pos = 0;
-			} else if([where isEqualToString:@"up"]) {
-				if (index <= 0) {
-					pos = [column count] - 1;
-				} else {
-					pos = index - 1;
-				}
-				to_col = column;
-			} else if([where isEqualToString:@"down"]) {
-				if (index >= [column count] - 1) {
+			
+			switch(where) {
+				case LEFT:
+					if (col <= 0) {
+						to_col = [columns lastObject];
+					} else {
+						to_col = [columns objectAtIndex:col-1];
+					}
 					pos = 0;
-				} else {
-					pos = index + 1;
-				}
-				to_col = column;
-			} else {
-				NSLog(@"Bad where %@", where);
-				exit(1);
+					break;
+				case RIGHT:
+					if (col >= [columns count]) {
+						to_col = [columns objectAtIndex:0];
+					} else {
+						to_col = [columns objectAtIndex:col+1];
+					}
+					pos = 0;
+					break;
+				case UP:
+					if (index <= 0) {
+						pos = [column count] - 1;
+					} else {
+						pos = index - 1;
+					}
+					to_col = column;
+					break;
+				case DOWN:
+					if (index >= [column count] - 1) {
+						pos = 0;
+					} else {
+						pos = index + 1;
+					}
+					to_col = column;
+					break;
+				default:
+					NSLog(@"Bad where %@", where);
+					exit(1);
 			}
 			
 			[column removeObjectAtIndex:index];
-			[to_col insertObject:window atIndex:pos];
+			[to_col insertObject:(id)window atIndex:pos];
 			
 			[self reflow];
 
@@ -170,7 +137,7 @@ static AXUIElementRef getFrontMostWindow()
 	}
 }
 
-- (void)focus:(NSString *)where {
+- (void)focus:(direction)where {
 	AXUIElementRef window = getFrontMostWindow();
 	
 	NSUInteger col_count = [columns count];
@@ -178,42 +145,47 @@ static AXUIElementRef getFrontMostWindow()
 		NSArray *column = [columns objectAtIndex:col];
 		NSUInteger win_count = [column count];
 		
-		NSUInteger win = [column indexOfObject:window];
+		NSUInteger win = [column indexOfObject:(id)window];
 
 		if (win != NSNotFound) {
 			int to_col, to_win;
 
-			if ([where isEqualToString:@"left"]) {
-				if (col <= 0) {
-					to_col = col_count - 1;
-				} else {
-					to_col = col - 1;
-				}
-				to_win = 0;
-			} else if ([where isEqualToString:@"right"]) {
-				if (col >= col_count - 1) {
-					to_col = 0;
-				} else {
-					to_col = col + 1;
-				}
-				to_win = 0;
-			} else if ([where isEqualToString:@"up"]) {
-				if (win <= 0) {
-					to_win = win_count - 1;
-				} else {
-					to_win = win - 1;
-				}
-				to_col = col;
-			} else if ([where isEqualToString:@"down"]) {
-				if (win >= win_count - 1) {
+			switch(where) {
+				case LEFT:
+					if (col <= 0) {
+						to_col = col_count - 1;
+					} else {
+						to_col = col - 1;
+					}
 					to_win = 0;
-				} else {
-					to_win = win + 1;
-				}
-				to_col = col;
-			} else {
-				NSLog(@"Bad where %@", where);
-				exit(1);
+					break;
+				case RIGHT:
+					if (col >= col_count - 1) {
+						to_col = 0;
+					} else {
+						to_col = col + 1;
+					}
+					to_win = 0;
+					break;
+				case UP:
+					if (win <= 0) {
+						to_win = win_count - 1;
+					} else {
+						to_win = win - 1;
+					}
+					to_col = col;
+					break;
+				case DOWN:
+					if (win >=win_count - 1) {
+						to_win = 0;
+					} else {
+						to_win = win + 1;
+					}
+					to_col = col;
+					break;
+				default:
+					NSLog(@"Bad where %@", where);
+					exit(1);
 			}
 
 			NSLog(@"%d, %d", to_col, to_win);
@@ -225,7 +197,7 @@ static AXUIElementRef getFrontMostWindow()
 			GetProcessForPID(pid, &psn);
 			SetFrontProcessWithOptions(&psn, kSetFrontProcessFrontWindowOnly);
 			
-			AXUIElementPerformAction(to_window, @"AXRaise");
+			AXUIElementPerformAction(to_window, (CFStringRef)@"AXRaise");
 			
 			return;
 		}

@@ -1,1 +1,5 @@
-void InitHotKeys();
+typedef enum {
+	LEFT, RIGHT, UP, DOWN,
+} direction;
+
+void initHotKeys();
